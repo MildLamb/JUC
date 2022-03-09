@@ -42,3 +42,71 @@ Java默认有几个线程? 2个 mian、GC
 3. 使用的范围不同：wait要在同步代码块中，sleep可以在任何地方使用
 4. 使用场景不同：wait多用于线程间的通信
 5. 是否需要被唤醒：wait需要被唤醒，sleep不需要
+
+## Lock锁(重点)
+![image](https://user-images.githubusercontent.com/92672384/157355271-12f06cdb-2153-418d-b84b-e8919a30c4c5.png)
+
+![image](https://user-images.githubusercontent.com/92672384/157355553-6b8cde30-b1d1-4452-b6c5-06db670ef98a.png)
+
+- 公平锁：十分公平，先来后到
+- 非公平锁：可以插队
+
+### Lock和Synchronized的区别
+1. Synchronized 内置的关键字，Lock是一个Java类
+2. Synchronized 法判断获取锁的状态，Lock可以判断是否获取到了锁
+3. Synchronized 会自动释放锁，Lock必须要手动释放锁，不然会死锁
+4. Synchronized 可重入锁，不可以中断的，非公平；Lock，可重入锁，可以判断锁，可以设置是否为公平锁
+5. Synchronized 适合锁少量的代码同步问题，Lock适合锁大量的同步代码
+
+## 生产者消费者问题
+### 传统生产者消费者问题，while防止虚假唤醒
+```java
+/**
+ * 线程之间的通信问题  等待，唤醒
+ */
+
+public class Product {
+    public static void main(String[] args) {
+        Data data = new Data();
+        new Thread(()->{ for (int i = 0; i < 10; i++) data.increment();},"Product").start();
+        new Thread(()->{ for (int i = 0; i < 10; i++) data.decrement();},"Customer").start();
+        new Thread(()->{ for (int i = 0; i < 10; i++) data.increment();},"Product2").start();
+        new Thread(()->{ for (int i = 0; i < 10; i++) data.decrement();},"Customer2").start();
+    }
+}
+
+class Data{
+    private int num = 0;
+
+    // +1
+    public synchronized void increment(){
+        while (num != 0){
+            // 等待
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        num++;
+        System.out.println(Thread.currentThread().getName() + " => " + num);
+        // 通知消费者，我生产了
+        this.notifyAll();
+    }
+
+    public synchronized void decrement(){
+        while (num == 0){
+            // 等待
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        num--;
+        System.out.println(Thread.currentThread().getName() + " => " + num);
+        // 通知生产者，我已经消费完了
+        this.notifyAll();
+    }
+}
+```
