@@ -196,7 +196,7 @@ class MyThread implements Callable<String> {
 ### CountDownLatch（闭锁，用于等待事件）
 原理：  
 - countDownLatch.countDown(); //数量-1
-- countDownLatch。await（）；  //等待计数器归零，然后再向下执行
+- countDownLatch.await();  //等待计数器归零，然后再向下执行
 
 ```java
 public class CountDownLatchDemo {
