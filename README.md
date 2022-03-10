@@ -191,3 +191,87 @@ class MyThread implements Callable<String> {
     }
 }
 ```
+
+## 辅助工具类
+### CountDownLatch（闭锁，用于等待事件）
+原理：  
+- countDownLatch.countDown(); //数量-1
+- countDownLatch。await（）；  //等待计数器归零，然后再向下执行
+
+```java
+public class CountDownLatchDemo {
+    public static void main(String[] args) throws InterruptedException {
+        // 总数是5
+        CountDownLatch countDownLatch = new CountDownLatch(5);
+
+        for (int i = 0; i < 5; i++) {
+            new Thread(()->{
+                System.out.println(Thread.currentThread().getName() + "Go out");
+                countDownLatch.countDown();  //数量-1
+            },"Task" + String.valueOf(i)).start();
+        }
+
+        countDownLatch.await();  //等待计数器归零，然后向下执行
+
+        System.out.println("计数器已经归零");
+    }
+}
+```
+
+### CyclicBarrier
+```java
+public class CyclicBarrierDemo {
+    public static void main(String[] args) {
+        /**
+         * 集齐7龙珠，召唤神龙
+         */
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(7,()->{
+            System.out.println("你已经召唤出了神龙");
+        });
+
+        for (int i = 0; i < 7; i++) {
+            final int temp = i;
+            new Thread(()->{
+                System.out.println(Thread.currentThread().getName() + "收集" + (temp+1) + "个龙珠");
+                try {
+                    cyclicBarrier.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (BrokenBarrierException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
+    }
+}
+```
+### Semaphore 信号量
+- semaphore.acquire();  //获取，假设信号量满了，等待其他线程释放
+- semaphore.release();  //释放当前信号量
+作用：多个共享资源的互斥使用！并发限流，控制最大线程数
+
+```java
+public class SemaphoreDemo {
+    public static void main(String[] args) {
+        // 用于限流
+        Semaphore semaphore = new Semaphore(3);
+
+        for (int i = 0; i < 6; i++) {
+            new Thread(()->{
+                // acquire()  获取
+                try {
+                    semaphore.acquire();
+                    System.out.println(Thread.currentThread().getName() + "拿到了车位");
+                    TimeUnit.SECONDS.sleep(2);
+                    System.out.println(Thread.currentThread().getName() + "离开了车位");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    // release()  释放
+                    semaphore.release();
+                }
+            },"Car"+String.valueOf(i+1)).start();
+        }
+    }
+}
+```
