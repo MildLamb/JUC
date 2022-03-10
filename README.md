@@ -163,3 +163,31 @@ class Data2{
     }
 }
 ```
+
+## Callable
+1. 可以有返回值
+2. 可以抛出异常
+3. 方法不同，call()
+
+```java
+public class CallableTest {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        //new Thread().start();  //如何启动Callable
+        // new Thread() 中的参数只能传递Runnable，想要传递Callable就要使用Runnable的适配类FutureTask
+        FutureTask<String> stringFutureTask = new FutureTask<>(new MyThread());
+        new Thread(stringFutureTask,"TaskA").start();
+        // 获取Callable的返回结果
+        String s = stringFutureTask.get();
+        System.out.println(s);
+    }
+}
+
+// Callable的泛型为call方法的返回值类型
+class MyThread implements Callable<String> {
+    @Override
+    public String call() {
+        System.out.println("进入call方法");
+        return "kindred";
+    }
+}
+```
