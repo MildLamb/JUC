@@ -342,3 +342,11 @@ class MyCacheLock{
     }
 }
 ```
+
+## 阻塞队列
+
+| 操作      | 抛出异常 | 不抛出异常，但有返回值 | 阻塞等待 | 超时等待 | 
+| ----------- | ----------- | ----------- | ----------- | ----------- |
+| 添加     |   add()     |  offer()  |  put()  |  offer(E e, long timeout, TimeUnit unit) |
+| 移除     |    remove()    |  poll()  |  take() | poll(long timeout, TimeUnit unit) |
+| 返回队首元素 |    element()    | peek()  |        |     |
