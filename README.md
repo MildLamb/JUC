@@ -451,3 +451,87 @@ public class ThreadPoolExectorDemo {
     }
 }
 ```
+
+### 最大线程数应该如何定义
+- CPU 密集型,几核，最大就设置几
+- I/O 密集型，判断程序中十分消耗I/O的线程
+
+## 四大函数式接口
+- 函数式接口：有且只有一个方法的接口
+
+### Function 函数型接口
+```java
+public class FunctionDemo {
+    public static void main(String[] args) {
+
+        /**
+         * Function<T, R>  传入参数类型 T ， 返回值类型 R
+         * R apply(T t);
+         */
+
+        Function<String,Integer> function = (String str) -> {
+            return 10;
+        };
+
+        System.out.println(function.apply("kindred"));
+    }
+}
+```
+### Predicate 断定型接口
+```java
+public class PredicateDemo {
+    public static void main(String[] args) {
+    
+        /**
+         * public interface Predicate<T>
+         * boolean test(T t);
+         */
+    
+        Predicate<String> predicate = (String str) -> {
+            return str.equals("kindred");
+        };
+
+        System.out.println(predicate.test("kindred"));
+    }
+}
+```
+### Supplier 供给型接口
+```java
+/**
+ * 供给型接口 Supplier
+ */
+
+public class SupplierDemo {
+    public static void main(String[] args) {
+        /**
+         * public interface Supplier<T>
+         * T get();
+         */
+        Supplier<String> supplier = () -> {
+          return "kindred";
+        };
+
+        System.out.println(supplier.get());
+    }
+}
+```
+### 消费型接口
+```java
+/**
+ * 消费型接口 Consumer
+ */
+
+public class ConsumerDemo {
+    public static void main(String[] args) {
+        /**
+         * public interface Consumer<T>
+         * void accept(T t);
+         */
+        Consumer<String> consumer = (str) -> {
+            System.out.println("Hello,我是" + str);
+        };
+
+        consumer.accept("kindred");
+    }
+}
+```
