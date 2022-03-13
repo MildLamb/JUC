@@ -345,8 +345,109 @@ class MyCacheLock{
 
 ## 阻塞队列
 
-| 操作      | 抛出异常 | 不抛出异常，但有返回值 | 阻塞等待 | 超时等待 | 
+| 操作      | 抛出异常 | 不抛出异常，但有返回值 | 阻塞等待(一直等) | 超时等待(等一段时间) | 
 | ----------- | ----------- | ----------- | ----------- | ----------- |
 | 添加     |   add()     |  offer()  |  put()  |  offer(E e, long timeout, TimeUnit unit) |
 | 移除     |    remove()    |  poll()  |  take() | poll(long timeout, TimeUnit unit) |
 | 返回队首元素 |    element()    | peek()  |        |     |
+
+## 线程池(重点)
+### 池化技术
+提前准备好资源，当程序需要使用资源时，从池中获取，使用完毕后再归还池中，避免重复创建带来的资源消耗，和性能减少。  
+
+### 线程池的好处
+1. 避免反复创建/销毁带来的降低资源的消耗
+2. 当需要使用线程时，直接从池中获取，提高响应的速度
+3. 方便资源的统一管理
+
+### 三大方法，7大参数，4种拒绝策列
+- 三大方法
+```java
+// Executors 工具类，3大方法
+// 使用了线程池后，使用线程池来创建线程
+public class Demo1 {
+    public static void main(String[] args) {
+//        ExecutorService executorService = Executors.newSingleThreadExecutor();  // 单线程线程池
+        ExecutorService executorService = Executors.newFixedThreadPool(5);     // 固定线程池大小的线程池
+//        ExecutorService executorService = Executors.newCachedThreadPool();   // 可伸缩的线程池
+//        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(4);  // 可执行周期任务
+        try {
+            for (int i = 0; i < 10; i++) {
+                executorService.execute(()->{
+                    System.out.println(Thread.currentThread().getName() + "ok");
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 线程池用完，程序结束，关闭线程池
+            executorService.shutdown();
+        }
+    }
+}
+```
+
+- 7大参数
+```java
+    public ThreadPoolExecutor(int corePoolSize,   // 核心线程数大小
+                              int maximumPoolSize,  // 最大线程池大小
+                              long keepAliveTime,   // 存活时间
+                              TimeUnit unit,     //  超时单位
+                              BlockingQueue<Runnable> workQueue,   // 任务队列(阻塞队列)
+                              ThreadFactory threadFactory,   //  线程工厂，创建线程的
+                              RejectedExecutionHandler handler) {  // 拒绝策略
+        if (corePoolSize < 0 ||
+            maximumPoolSize <= 0 ||
+            maximumPoolSize < corePoolSize ||
+            keepAliveTime < 0)
+            throw new IllegalArgumentException();
+        if (workQueue == null || threadFactory == null || handler == null)
+            throw new NullPointerException();
+        this.acc = System.getSecurityManager() == null ?
+                null :
+                AccessController.getContext();
+        this.corePoolSize = corePoolSize;
+        this.maximumPoolSize = maximumPoolSize;
+        this.workQueue = workQueue;
+        this.keepAliveTime = unit.toNanos(keepAliveTime);
+        this.threadFactory = threadFactory;
+        this.handler = handler;
+    }
+```
+
+- 4种拒绝策略
+```java
+ThreadPoolExecutor.AbortPolicy()   // 拒绝任务，抛出异常
+ThreadPoolExecutor.DiscardPolicy()  // 拒绝任务，不抛出异常
+ThreadPoolExecutor.DiscardOldestPolicy()  // 将任务队列最老的任务丢弃，并尝试再次提交新的任务,不抛出异常
+ThreadPoolExecutor.CallerRunsPolicy()  // 谁调用的，谁来执行
+```
+
+- 自定义线程池
+```java
+public class ThreadPoolExectorDemo {
+    public static void main(String[] args) {
+        // 阿里巴巴推荐使用底层 ThreadPoolExecutor 来创建线程池
+        
+        // 自定义线程池
+        ExecutorService executorService = new ThreadPoolExecutor(2, 5,
+                3, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(3),
+                Executors.defaultThreadFactory(),
+                new ThreadPoolExecutor.AbortPolicy());  // 单线程线程池
+                
+        try {
+            for (int i = 0; i < 8; i++) {
+                executorService.execute(()->{
+                    System.out.println(Thread.currentThread().getName() + "ok");
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 线程池用完，程序结束，关闭线程池
+            executorService.shutdown();
+        }
+    }
+}
+```
