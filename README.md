@@ -583,7 +583,7 @@ public class Test {
 ```
 
 ## JMM
--JMM: Java内存模型，不是真实存在的东西，是一个概念
+- JMM: Java内存模型，不是真实存在的东西，是一个概念
 
 
 ### 内存交互操作
@@ -606,3 +606,67 @@ public class Test {
   - 如果对一个变量进行lock操作，会清空所有工作内存中此变量的值，在执行引擎使用这个变量前，必须重新load或assign操作初始化变量的值
   - 如果一个变量没有被lock，就不能对其进行unlock操作。也不能unlock一个被其他线程锁住的变量
   - 对一个变量进行unlock操作之前，必须把此变量同步回主内存
+
+### Volatile
+- Volatile是Java虚拟机提供的轻量级的同步机制
+1. 保证可见性
+2. 不保证原子性
+3. 禁止指令重排序
+
+**保证可见性**  
+```java
+public class JMMDemo {
+
+    // 不加volatile 程序会死循环
+    private static volatile int num = 0;
+
+    public static void main(String[] args) throws InterruptedException {
+        new Thread(()->{
+            while(num == 0){
+            }
+        }).start();
+
+        TimeUnit.SECONDS.sleep(2);
+
+        num = 1;
+        System.out.println(num);
+    }
+}
+```
+**不保证原子性**
+```java
+/**
+ * Volatile 不保证原子性
+ * 如果不加 lock 和 synchronized ， 可以使用原子类来保证原子性
+ */
+
+public class VDemo {
+    // Volatile 不保证原子性
+    private volatile static AtomicInteger num = new AtomicInteger(0);
+
+    public static void add(){
+        // 1. 获得num的值
+        // 2， +1
+        // 3. 写回新的值
+        num.getAndIncrement();  // AtomicInteger的加一操作
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 10; i++) {
+            new Thread(() -> {
+                for (int i1 = 0; i1 < 1000; i1++) {
+                    add();
+                }
+            }).start();
+        }
+
+
+        while (Thread.activeCount() > 2){
+            Thread.yield();
+        }
+
+        System.out.println(Thread.currentThread().getName() + " " + num);
+
+    }
+}
+```
