@@ -670,3 +670,63 @@ public class VDemo {
     }
 }
 ```
+**禁止指令重排序**  
+
+## 单例模式
+### 饿汉式
+```java
+/**
+ * 饿汉式单例
+ */
+
+public class Hungry {
+
+    private Hungry(){
+
+    }
+
+    private final static Hungry HUNGRY = new Hungry();
+
+    public static Hungry getInstance(){
+        return HUNGRY;
+    }
+}
+```
+
+### 懒汉式
+```java
+public class LazyMan {
+
+    private LazyMan(){
+        System.out.println(Thread.currentThread().getName() + "ok");
+    }
+
+    private volatile static LazyMan lazyMan;
+
+    public synchronized static LazyMan getInstance(){
+        if (lazyMan == null) {
+            lazyMan = new LazyMan();
+        }
+        return lazyMan;
+    }
+
+    // 多线程并发
+    public static void main(String[] args){
+        for (int i = 0; i < 10; i++) {
+            new Thread(()->{
+                LazyMan.getInstance();
+            }).start();
+        }
+    }
+}
+```
+
+## CAS
+CAS机制当中使用了3个基本操作数：内存地址V，旧的预期值A，要修改的新值B。更新一个变量的时候，只有当变量的预期值A和内存地址V当中的实际值相同时，才会将内存地址V对应的值修改为B。
+
+CAS的缺点：  
+1. CPU开销较大  
+在并发量比较高的情况下，如果许多线程反复尝试更新某一个变量，却又一直更新不成功，循环往复，会给CPU带来很大的压力。  
+
+2. 不能保证代码块的原子性  
+CAS机制所保证的只是一个变量的原子性操作，而不能保证整个代码块的原子性。比如需要保证3个变量共同进行原子性的更新，就不得不使用Synchronized了  
