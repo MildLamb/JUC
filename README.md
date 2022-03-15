@@ -735,6 +735,7 @@ CAS机制所保证的只是一个变量的原子性操作，而不能保证整�
 ### ABA问题
 - 概念：就是说一个线程把数据A变为了B，然后又重新变成了A。此时另外━个线程读取的时候，发现A没有变化，就误以为是原来的那个A。这就是有名的ABA问题。
 - AtomicStampedReference
+- 注意：Integer使用了对象缓存机制，默认范围是-128~127，推荐使用静态工厂方法valueof获取对象实例，而不是new，因为valueOf使用缓存，而new一定会创建新的对象分配新的内存空间;
 ```java
 public class ABADemo {
     public static void main(String[] args) {
