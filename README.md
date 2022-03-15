@@ -730,3 +730,50 @@ CAS的缺点：
 
 2. 不能保证代码块的原子性  
 CAS机制所保证的只是一个变量的原子性操作，而不能保证整个代码块的原子性。比如需要保证3个变量共同进行原子性的更新，就不得不使用Synchronized了  
+
+
+### ABA问题
+- 概念：就是说一个线程把数据A变为了B，然后又重新变成了A。此时另外━个线程读取的时候，发现A没有变化，就误以为是原来的那个A。这就是有名的ABA问题。
+- AtomicStampedReference
+```java
+public class ABADemo {
+    public static void main(String[] args) {
+        AtomicStampedReference<Integer> stampedReference = new AtomicStampedReference(1,1);
+
+        new Thread(()->{
+            // stampedReference.getStamp(); //获取版本号
+            System.out.println("a1=>" + stampedReference.getStamp());
+            try {
+                TimeUnit.SECONDS.sleep(2);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+
+            System.out.println("TaskA1 ==>" +stampedReference.compareAndSet(1, 2, stampedReference.getStamp(), stampedReference.getStamp() + 1));
+            System.out.println("a2=>" + stampedReference.getStamp());
+
+            System.out.println("TaskA2 ==>" +stampedReference.compareAndSet(2, 1, stampedReference.getStamp(), stampedReference.getStamp() + 1));
+            System.out.println("a3=>" + stampedReference.getStamp());
+
+
+        },"TaskA").start();
+
+
+        new Thread(()->{
+            System.out.println("b1=>" + stampedReference.getStamp());
+            try {
+                TimeUnit.SECONDS.sleep(2);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+
+            System.out.println("TaskB ==>" + stampedReference.compareAndSet(1, 6, stampedReference.getStamp(), stampedReference.getStamp() + 1));
+            System.out.println("b2=>" + stampedReference.getStamp());
+
+
+        },"TaskB").start();
+    }
+}
+```
