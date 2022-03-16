@@ -778,3 +778,185 @@ public class ABADemo {
     }
 }
 ```
+
+## 锁
+### 可重入锁
+- 可重入就是说某个线程已经获得某个锁，可以再次获取这个锁而不会出现死锁
+```java
+/**
+ * 可重入就是说某个线程已经获得某个锁，可以再次获取锁而不会出现死锁
+ */
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class Demo2 {
+    public static void main(String[] args) {
+        Phone2 phone2 = new Phone2();
+        Phone2 phone3 = new Phone2();
+        new Thread(()->{
+            phone2.sms();
+        },"TaskA").start();
+
+        new Thread(()->{
+            phone3.tall();
+        },"TaskB").start();
+    }
+}
+
+class Phone2 {
+
+    Lock lock = new ReentrantLock();
+
+    public void sms(){
+
+        lock.lock();
+
+        try {
+            System.out.println(Thread.currentThread().getName() + "sms --> " + lock.toString());
+            call();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void call(){
+        lock.lock();
+        try {
+            System.out.println(Thread.currentThread().getName() + "call --> " + lock.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void tall(){
+        lock.lock();
+        try {
+            call();
+            System.out.println(Thread.currentThread().getName() + "tall --> " + lock.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+```
+
+### 自旋锁
+- 是指当一个线程在获取锁的时候，如果锁已经被其它线程获取，那么该线程将循环等待，然后不断的判断锁是否能够被成功获取，直到获取到锁才会退出循环
+```java
+public class TestSpinLock {
+    public static void main(String[] args) throws InterruptedException {
+        SpinlockDemo lock = new SpinlockDemo();
+
+        new Thread(() -> {
+            lock.myLock();
+            try {
+                TimeUnit.SECONDS.sleep(3);
+            } catch (Exception e){
+                e.printStackTrace();
+            } finally {
+                lock.myUnLock();
+            }
+        },"T1").start();
+
+        TimeUnit.SECONDS.sleep(1);
+
+        new Thread(() -> {
+            lock.myLock();
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (Exception e){
+                e.printStackTrace();
+            } finally {
+                lock.myUnLock();
+            }
+        },"T2").start();
+    }
+}
+```
+
+### 死锁
+死锁的4个必要条件：  
+- 互斥条件：资源是独占的且排他使用，进程互斥使用资源，即任意时刻一个资源只能给一个进程使用，其他进程若申请一个资源，而该资源被另一进程占有时，则申请者等待直到资源被占有者释放。
+- 不可剥夺条件：进程所获得的资源在未使用完毕之前，不被其他进程强行剥夺，而只能由获得该资源的进程资源释放。
+- 请求和保持条件：进程每次申请它所需要的一部分资源，在申请新的资源的同时，继续占用已分配到的资源。
+- 循环等待条件：在发生死锁时必然存在一个进程等待队列{P1,P2,…,Pn},其中P1等待P2占有的资源，P2等待P3占有的资源，…，Pn等待P1占有的资源，形成一个进程等待环路，环路中每一个进程所占有的资源同时被另一个申请，也就是前一个进程占有后一个进程所深情地资源。
+
+### 死锁排查
+- 编写一个死锁程序
+```java
+public class DeadLockDemo1 {
+    public static void main(String[] args) {
+
+        String lock_A = "Alock";
+        String lock_B = "Block";
+
+        new Thread(new MyThread(lock_A,lock_B),"T1").start();
+        new Thread(new MyThread(lock_B,lock_A),"T2").start();
+    }
+}
+
+class MyThread implements Runnable {
+
+    private String lockA;
+    private String lockB;
+
+    public MyThread(String lockA, String lockB) {
+        this.lockA = lockA;
+        this.lockB = lockB;
+    }
+
+    @Override
+    public void run() {
+        synchronized (lockA){
+            System.out.println(Thread.currentThread().getName() + "lock:" + lockA + ",want:" + lockB);
+            try {
+                TimeUnit.SECONDS.sleep(2);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            synchronized (lockB){
+                System.out.println(Thread.currentThread().getName() + "lock:" + lockB + ",want:" + lockA);
+            }
+        }
+    }
+}
+```
+1. 使用 jps -l 定位进程号
+```bash
+C:\Code_Study\IDEA\juc>jps -l
+15988 org.jetbrains.jps.cmdline.Launcher
+12264 org.jetbrains.idea.maven.server.RemoteMavenServer
+5512 sun.tools.jps.Jps
+840
+6524 com.mildlamb.juc.lock.DeadLockDemo1
+```
+2. 使用 jstack 进程号 ，查看进程信息
+```bash
+C:\Code_Study\IDEA\juc>jstack 6524
+
+... ...
+... ...
+... ...
+
+Java stack information for the threads listed above:
+===================================================
+"T2":
+        at com.mildlamb.juc.lock.MyThread.run(DeadLockDemo1.java:36)
+        - waiting to lock <0x000000076df1fde0> (a java.lang.String)
+        - locked <0x000000076df1fe18> (a java.lang.String)
+        at java.lang.Thread.run(Thread.java:748)
+"T1":
+        at com.mildlamb.juc.lock.MyThread.run(DeadLockDemo1.java:36)
+        - waiting to lock <0x000000076df1fe18> (a java.lang.String)
+        - locked <0x000000076df1fde0> (a java.lang.String)
+        at java.lang.Thread.run(Thread.java:748)
+
+Found 1 deadlock.
+```
